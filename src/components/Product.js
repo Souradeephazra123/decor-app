@@ -51,7 +51,10 @@ const Modal = ({ price, onclick, productTitle }) => {
               <div
                 onClick={() => {
                   setSelectedTab(1);
-                  setValue("offer", (+price - (price * 15) / 100).toFixed(2));
+                  setValue("offer", (+price - (price * 15) / 100).toFixed(2), {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
                   trigger("offer");
                 }}
                 className={`${
@@ -64,7 +67,10 @@ const Modal = ({ price, onclick, productTitle }) => {
               <div
                 onClick={() => {
                   setSelectedTab(2);
-                  setValue("offer", (+price - (price * 10) / 100).toFixed(2));
+                  setValue("offer", (+price - (price * 10) / 100).toFixed(2), {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
                   trigger("offer");
                 }}
                 className={`${
@@ -77,7 +83,10 @@ const Modal = ({ price, onclick, productTitle }) => {
               <div
                 onClick={() => {
                   setSelectedTab(3);
-                  setValue("offer", (+price - (price * 5) / 100).toFixed(2));
+                  setValue("offer", (+price - (price * 5) / 100).toFixed(2), {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
                   trigger("offer");
                 }}
                 className={`${
