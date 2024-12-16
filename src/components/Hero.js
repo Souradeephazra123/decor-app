@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 
 const Hero = () => {
@@ -24,7 +25,12 @@ const Hero = () => {
           with Ryann to discuss how she adds unique auction and consignment
           finds into her projects.
         </p>
-        <a href="/the-reserve" className=" rounded-md px-10 py-1.5 bg-blue-700 w-fit ">Shop Now</a>
+        <Link
+          href="/the-reserve"
+          className=" rounded-md px-10 py-1.5 bg-blue-700 w-fit "
+        >
+          Shop Now
+        </Link>
       </div>
     </div>
   );
