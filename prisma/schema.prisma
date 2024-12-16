@@ -1,0 +1,528 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ParamType {
+  master
+  custom
+  site_custom
+}
+
+enum UserRoles {
+  admin
+  operator
+}
+
+model MasterParameters {
+  paramId   String    @id @default(cuid()) @map("id")
+  groupName String
+  name      String
+  unit      String
+  minRange  Float
+  maxRange  Float
+  type      ParamType
+  sortOrder Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  UnitParams UnitParams[]
+}
+
+enum SiteType {
+  gc
+  gdu
+  rigs
+}
+
+model Sites {
+  id                 String   @id @default(cuid())
+  siteType           SiteType
+  projectId          String?
+  clientId           String
+  locId              String
+  targetProd         Float
+  targetFuel         Float
+  prodPenalty        Float
+  fuelPenalty        Float
+  prodUnit           String
+  fuelUnit           String
+  dataEntryStartDate DateTime @db.Date()
+  billingStartTime   DateTime @default(now()) @db.Time(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  location Locations @relation(fields: [locId], references: [id])
+  client   Clients   @relation(fields: [clientId], references: [id])
+  project  Projects? @relation(fields: [projectId], references: [id])
+
+  siteUnits        SiteUnits[]
+  siteEmployees    SiteEmployees[]
+  vehicles         Vehicles[]
+  unitsData        UnitsData[]
+  billing          Billing[]
+  maintenanceData  MaintenanceData[]
+  pettyCash        PettyCash[]
+  stock            Stock[]
+  SiteData         SiteData[]
+  LateEntryReport  LateEntryReport[]
+  dashboardData DashboardData[]
+}
+
+model SiteUnits {
+  id                  String  @id @default(cuid())
+  siteId              String
+  name                String
+  suctionPressureId   String
+  suctionTempId       String
+  dischargePressureId String
+  dischargeTempId     String
+  pressureDrop        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site Sites @relation(fields: [siteId], references: [id])
+
+  unitParams         UnitParams[]
+  maintenanceData    MaintenanceData[]
+  unitsData          UnitsData[]
+  siteEmployees      SiteEmployees[]
+  unitStatus         UnitStatus[]
+  StockConsumedValue StockConsumedValue[]
+  DataEntryReport    DataEntryReport[]
+}
+
+model UnitParams {
+  id            String @id @default(cuid())
+  siteUnitId    String
+  masterParamId String
+  localUnit     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  siteUnit        SiteUnits        @relation(fields: [siteUnitId], references: [id], onDelete: Cascade)
+  masterParameter MasterParameters @relation(fields: [masterParamId], references: [paramId])
+
+  unitsData UnitsData[]
+
+  @@unique([siteUnitId, masterParamId], name: "siteUnitId_masterParamId_unique")
+}
+
+model SiteData {
+  id           String   @id @default(cuid())
+  siteId       String
+  timestamp    DateTime @db.Timestamp()
+  suctionVol   Float
+  dischargeVol Float
+  fuel         Float
+  energy       Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site Sites @relation(fields: [siteId], references: [id])
+
+  @@unique([timestamp, siteId])
+}
+
+model UnitsData {
+  id                 String   @id @default(cuid())
+  siteId             String
+  scheduledTimestamp DateTime @db.Timestamp()
+  actualTimestamp    DateTime @db.Timestamp()
+  siteUnitId         String
+  unitParamsId       String
+  value              Float
+  difference         Float
+  remarks            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site      Sites      @relation(fields: [siteId], references: [id])
+  siteUnit  SiteUnits  @relation(fields: [siteUnitId], references: [id], onDelete: Restrict)
+  unitParam UnitParams @relation(fields: [unitParamsId], references: [id])
+}
+
+enum Status {
+  running
+  standby
+  shutdown
+}
+
+enum Source {
+  dil
+  client
+}
+
+model UnitStatus {
+  id         String   @id @default(cuid())
+  siteUnitId String
+  timestamp  DateTime @db.Timestamp()
+  status     Status
+  source     Source
+  remarks    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  siteUnit SiteUnits @relation(fields: [siteUnitId], references: [id], onDelete: Cascade)
+
+  @@unique([timestamp, siteUnitId])
+}
+
+enum MaintenanceDataStatus {
+  schedule
+  breakdown
+}
+
+model MaintenanceData {
+  id         String                @id @default(cuid())
+  siteId     String
+  siteUnitId String
+  timestamp  DateTime              @db.Timestamp()
+  status     MaintenanceDataStatus
+  work       String?
+  rootCause  String?
+  remarks    String?
+  isPending  Boolean               @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site     Sites     @relation(fields: [siteId], references: [id])
+  siteUnit SiteUnits @relation(fields: [siteUnitId], references: [id], onDelete: Cascade)
+}
+
+enum StockType {
+  oil
+  consumable
+  teg
+  meg
+}
+
+enum StockUnit {
+  ltr
+  nos
+}
+
+enum StockOperation {
+  increase
+  decrease
+  current
+}
+
+model Stock {
+  id                     String         @id @default(cuid())
+  siteId                 String
+  date                   DateTime       @db.Timestamp()
+  erpItemId              String
+  name                   String
+  type                   StockType
+  unit                   String
+  openingValue           Float
+  operation              StockOperation
+  value                  Float?
+  remarks                String?        @default("")
+  description1           String?        @default("")
+  description2           String?        @default("")
+  description3           String?        @default("")
+  description4           String?        @default("")
+  description5           String?        @default("")
+  binCode                String?        @default("")
+  unitAmount             Float
+  costCenterCode         String         @default("GEN-01")
+  projectId              String?
+  globalDimension1Code   String?
+  globalDimension2Code   String?
+  globalDimension1Filter String?
+  globalDimension2Filter String?
+  dropShipmentFilter     String?
+  variantFilter          String?
+  lotNoFilter            String?
+  serialNoFilter         String?
+  unitOfMeasureFilter    String?
+  packageNoFilter        String?
+
+  consumedValue StockConsumedValue[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site    Sites     @relation(fields: [siteId], references: [id])
+  project Projects? @relation(fields: [projectId], references: [id])
+}
+
+model StockConsumedValue {
+  id String @id @default(cuid())
+
+  stockId    String
+  siteUnitId String
+  engine     Float  @default(0)
+  compressor Float  @default(0)
+  crankCase  Float  @default(0)
+  makeupTank Float  @default(0)
+  others     Float  @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Stock     Stock     @relation(fields: [stockId], references: [id])
+  SiteUnits SiteUnits @relation(fields: [siteUnitId], references: [id], onDelete: Cascade)
+
+  @@unique([stockId, siteUnitId])
+}
+
+model SiteEmployees {
+  id     String @id @default(cuid())
+  siteId String
+  empId  String
+
+  role         String
+  assignedUnit String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site      Sites      @relation(fields: [siteId], references: [id])
+  employees Employees  @relation(fields: [empId], references: [id])
+  siteUnits SiteUnits? @relation(fields: [assignedUnit], references: [id], onDelete: Cascade)
+}
+
+model Employees {
+  id                 String    @id @default(cuid())
+  employeeId         String    @unique
+  name               String
+  role               UserRoles
+  phone              String
+  email              String    @unique
+  password           String?
+  salt               String?
+  projectId          String?
+  clientId           String?
+  locId              String?
+  resetPasswordToken String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  location Locations? @relation(fields: [locId], references: [id])
+
+  siteEmployees SiteEmployees[]
+}
+
+model VehicleData {
+  id             String   @id @default(cuid())
+  timestamp      DateTime @db.Timestamp()
+  vehicleId      String
+  openingKms     Float
+  closingKms     Float
+  fuel           Float
+  purpose        String?
+  journeyDetails String?
+  vehicleUser    String?
+  siteIncharge   String
+  remarks        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vehicle Vehicles? @relation(fields: [vehicleId], references: [id])
+}
+
+model Vehicles {
+  id                 String  @id @default(cuid())
+  siteId             String?
+  type               String
+  registrationNumber String
+  owner              String
+  driver             String
+
+  insuranceExpiryDate DateTime? @db.Date()
+  driverLicenseNo     String?
+  licenseIssueDate    DateTime? @db.Date()
+  validUpTo           DateTime? @db.Date()
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site Sites? @relation(fields: [siteId], references: [id])
+
+  vehicleData VehicleData[]
+}
+
+model Billing {
+  id              String   @id @default(cuid())
+  siteId          String
+  date            DateTime @db.Date()
+  suctionVolume   Float
+  dischargeVolume Float
+  fuel            Float
+  energy          Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site Sites @relation(fields: [siteId], references: [id])
+
+  @@unique([siteId, date])
+}
+
+model PettyCash {
+  id      String   @id @default(cuid())
+  siteId  String
+  balance Float
+  date    DateTime @db.Date()
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site Sites @relation(fields: [siteId], references: [id])
+
+  PettyCashEntries  PettyCashEntries[]
+  PettyCashVouchers PettyCashVouchers[]
+}
+
+enum PettyCashEntriesType {
+  credit
+  debit
+}
+
+model PettyCashEntries {
+  id          String               @id @default(cuid())
+  pettyCashId String
+  type        PettyCashEntriesType
+  description String
+  amount      Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pettyCash PettyCash @relation(fields: [pettyCashId], references: [id], onDelete: Cascade)
+}
+
+model PettyCashVouchers {
+  id          String @id @default(cuid())
+  pettyCashId String
+  fileName    String
+  fileSize    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pettyCash PettyCash @relation(fields: [pettyCashId], references: [id], onDelete: Cascade)
+}
+
+model Clients {
+  id   String @id @default(cuid())
+  name String
+  code String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Locations Locations[]
+  Sites     Sites[]
+}
+
+model Locations {
+  id        String  @id @default(cuid())
+  name      String
+  erpLocId  String
+  clientId  String?
+  address   String?
+  address2  String?
+  postCode  String?
+  city      String?
+  country   String?
+  stateCode String?
+  GSTIN     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client Clients? @relation(fields: [clientId], references: [id])
+
+  Sites     Sites[]
+  Employees Employees[]
+}
+
+model Projects {
+  id     String @id @default(cuid())
+  name   String
+  code   String
+  status String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Stock Stock[]
+  Sites Sites[]
+}
+
+model DataEntryReport {
+  id            String   @id @default(cuid())
+  siteUnitId    String
+  timestamp     DateTime @db.Timestamp()
+  paramName     String
+  minVal        Float
+  maxVal        Float
+  unitOfMeasure String
+  enteredValue  Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  SiteUnits SiteUnits @relation(fields: [siteUnitId], references: [id], onDelete: Cascade)
+}
+
+model AdminSettings {
+  id              String    @id @default(cuid())
+  reportFrequency Int?
+  lastExecuted    DateTime? @db.Timestamp()
+  pastDaysAllowed Int?
+}
+
+model LateEntryReport {
+  id                 String   @id @default(cuid())
+  siteId             String
+  siteUnitId         String
+  scheduledTimestamp DateTime @db.Timestamp()
+  actualTimestamp    DateTime @db.Timestamp()
+  delay              Float
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  Sites              Sites    @relation(fields: [siteId], references: [id])
+}
+
+model TempStock {
+  id String @id @default(cuid())
+
+  erpItemId    String
+  openingValue Float
+  updatedAt    DateTime @updatedAt
+}
+
+model DashboardData {
+  id         String   @id @default(cuid())
+  siteId     String
+  date       DateTime @db.Date()
+  production Float
+  fuel       Float
+  energy     Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site Sites @relation(fields: [siteId], references: [id])
+
+  @@unique([siteId, date])
+}
