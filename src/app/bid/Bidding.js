@@ -168,7 +168,7 @@ const Bidding = ({ type, product, price }) => {
             type="submit"
             className=" px-10 py-2.5 bg-gray-500"
           >
-            Review Offer
+            Send Offer to Buyer
           </button>
           {type === "buyer" && (
             <button

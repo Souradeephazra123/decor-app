@@ -210,11 +210,20 @@ const Form = ({ product, price }) => {
             name={"postcode"}
             control={control}
             defaultValue={""}
+            rules={
+              {
+                required: "Postal Code is required",
+                pattern: {
+                  value: /^\d{6}$/,
+                  message: "Invalid Postal Code",
+                },
+              }
+            }
             render={({ field }) => (
               <div className=" flex flex-col gap-2">
                 <input
                   {...field}
-                  type="text"
+                  type="number"
                   placeholder="Postal Code"
                   className=" w-full bg-Black  p-2 placeholder:text-Grey-7 border border-black"
                 />
@@ -248,6 +257,15 @@ const Form = ({ product, price }) => {
             name={"email"}
             control={control}
             defaultValue={""}
+            rules={
+              {
+                required: "Email is required",
+                pattern: {
+                  value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/,
+                  message: "Invalid email address",
+                },
+              }
+            }
             render={({ field }) => (
               <div className=" flex flex-col gap-2">
                 <input
