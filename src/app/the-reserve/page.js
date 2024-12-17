@@ -50,7 +50,7 @@ const page = () => {
             </button>
             <Link
               href={`/shop/${sanitizeURL(item.title)}`}
-              className=" text-center bg-blue-900 text-white font-bold py-1.5 rounded-md"
+              className=" text-center bg-blue-900 text-white font-bold py-1.5 rounded-md relative z-10"
             >
               MAKE AN OFFER
             </Link>

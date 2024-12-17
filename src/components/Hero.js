@@ -27,9 +27,11 @@ const Hero = () => {
         </p>
         <Link
           href="/the-reserve"
-          className=" z-10 rounded-md px-10 py-1.5 bg-blue-700 w-fit "
+          className=" z-10  "
         >
-          Shop Now
+          <button className="rounded-md px-10 py-1.5 bg-blue-700 w-fit ">
+            Shop Now
+          </button>
         </Link>
       </div>
     </div>
